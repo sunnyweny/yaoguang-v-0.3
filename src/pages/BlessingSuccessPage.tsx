@@ -33,7 +33,7 @@ const BlessingSuccessPage: React.FC = () => {
   };
 
   return (
-    <MobileLayout className="min-h-screen flex flex-col" showTopClouds showBottomClouds>
+    <MobileLayout className="min-h-screen flex flex-col" useSecondaryBg>
       <Toast message={toast.message} visible={toast.visible} onHide={hideToast} />
 
       {/* Main Content */}

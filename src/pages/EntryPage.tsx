@@ -24,7 +24,7 @@ const EntryPage: React.FC = () => {
   };
 
   return (
-    <MobileLayout className="flex flex-col items-center justify-center min-h-screen px-6" showTopClouds showBottomClouds>
+    <MobileLayout className="flex flex-col items-center justify-center min-h-screen px-6" useSecondaryBg>
       <div className="relative z-10 w-full max-w-sm space-y-10">
         {/* Logo/Header */}
         <div className="animate-fade-in">

@@ -44,7 +44,7 @@ const BlessingViewPage: React.FC = () => {
   // Locked View - Password Input
   if (needsPassword) {
     return (
-      <MobileLayout className="min-h-screen flex flex-col items-center justify-center px-6">
+      <MobileLayout className="min-h-screen flex flex-col items-center justify-center px-6" useSecondaryBg>
         <Toast message={toast.message} visible={toast.visible} onHide={hideToast} />
 
         {/* Password Card */}
@@ -89,7 +89,7 @@ const BlessingViewPage: React.FC = () => {
 
   // Unlocked View - Blessing Poster
   return (
-    <MobileLayout className="min-h-screen flex flex-col" showTopClouds showBottomClouds>
+    <MobileLayout className="min-h-screen flex flex-col" useSecondaryBg>
       <Toast message={toast.message} visible={toast.visible} onHide={hideToast} />
 
       {/* Header with Logo */}
