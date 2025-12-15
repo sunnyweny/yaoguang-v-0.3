@@ -18,10 +18,10 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
 }) => {
   return (
     <div className="min-h-screen bg-background bg-pattern relative">
-      {/* Secondary background image overlay */}
+      {/* Secondary background image overlay - at bottom layer */}
       {useSecondaryBg && (
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none z-0"
           style={{ backgroundImage: `url(${backgroundSecondary})` }}
         />
       )}
