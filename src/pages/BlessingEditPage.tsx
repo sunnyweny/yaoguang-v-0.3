@@ -59,7 +59,7 @@ const BlessingEditPage: React.FC = () => {
         {/* Text Input Card with cloud decoration */}
         <div className="animate-fade-in relative">
           {/* Cloud decoration in top-left corner */}
-          <div className="absolute -top-2 -left-2 z-10">
+          <div className="absolute -top-2 -left-2 z-0">
             <svg width="80" height="50" viewBox="0 0 80 50" className="text-brand-gold opacity-80">
               <path d="M15 35 Q5 35 5 28 Q5 22 12 20 Q10 15 15 12 Q22 8 30 12 Q35 8 42 10 Q50 5 58 10 Q65 8 70 15 Q78 18 75 28 Q78 35 70 38 Q65 42 55 40 Q48 45 38 42 Q28 45 20 40 Q12 42 15 35 Z" 
                     fill="none" 
