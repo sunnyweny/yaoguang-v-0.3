@@ -25,7 +25,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
           style={{ backgroundImage: `url(${backgroundSecondary})` }}
         />
       )}
-      <div className={`mobile-container relative overflow-hidden ${className}`}>
+      <div className={`mobile-container relative overflow-hidden z-10 ${className}`}>
         {children}
       </div>
     </div>
