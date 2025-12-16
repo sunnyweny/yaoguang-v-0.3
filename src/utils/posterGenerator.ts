@@ -1,5 +1,5 @@
 /**
- * 使用 Canvas API 生成祝福海报并下载
+ * 使用 Canvas API 生成祝福海报
  */
 
 interface PosterOptions {
@@ -7,15 +7,23 @@ interface PosterOptions {
   date: string;
 }
 
-export async function generateAndDownloadPoster(options: PosterOptions): Promise<boolean> {
+interface GenerateResult {
+  success: boolean;
+  dataUrl?: string;
+  error?: string;
+}
+
+/**
+ * 生成海报并返回 dataUrl
+ */
+export async function generatePoster(options: PosterOptions): Promise<GenerateResult> {
   const { blessingText, date } = options;
   
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   
   if (!ctx) {
-    console.error('无法获取 canvas context');
-    return false;
+    return { success: false, error: '无法获取 canvas context' };
   }
 
   // 海报尺寸 (适合手机壁纸比例)
@@ -144,16 +152,33 @@ export async function generateAndDownloadPoster(options: PosterOptions): Promise
   ctx.fillStyle = 'rgba(201, 169, 98, 0.7)';
   ctx.fillText('祝你新年快乐 · 诸善如意 · 阖家幸福', width / 2, height - 60);
 
-  // 下载图片
   try {
     const dataUrl = canvas.toDataURL('image/png');
-    const link = document.createElement('a');
-    link.download = `瑶光阁祝福_${new Date().getTime()}.png`;
-    link.href = dataUrl;
-    link.click();
-    return true;
+    return { success: true, dataUrl };
   } catch (error) {
-    console.error('保存海报失败:', error);
-    return false;
+    console.error('生成海报失败:', error);
+    return { success: false, error: '生成海报失败' };
   }
+}
+
+/**
+ * 触发下载 (Android / Desktop)
+ */
+export function downloadPoster(dataUrl: string, filename?: string): void {
+  const link = document.createElement('a');
+  link.download = filename || `瑶光阁祝福_${new Date().getTime()}.png`;
+  link.href = dataUrl;
+  link.click();
+}
+
+/**
+ * 兼容旧接口 - 生成并下载海报
+ */
+export async function generateAndDownloadPoster(options: PosterOptions): Promise<boolean> {
+  const result = await generatePoster(options);
+  if (result.success && result.dataUrl) {
+    downloadPoster(result.dataUrl);
+    return true;
+  }
+  return false;
 }

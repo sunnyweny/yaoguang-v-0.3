@@ -5,15 +5,19 @@ import { Button } from '@/components/ui/button';
 import { PasswordInput } from '@/components/PasswordInput';
 import { BrandLogo } from '@/components/BrandLogo';
 import { useBlessing } from '@/context/BlessingContext';
-import { Lock, Download } from 'lucide-react';
+import { Lock, Download, Loader2 } from 'lucide-react';
 import { Toast, useToastState } from '@/components/Toast';
-import { generateAndDownloadPoster } from '@/utils/posterGenerator';
+import { generatePoster, downloadPoster } from '@/utils/posterGenerator';
+import { detectPlatform } from '@/utils/platformDetect';
+import { PosterPreviewModal } from '@/components/PosterPreviewModal';
 
 const BlessingViewPage: React.FC = () => {
   const navigate = useNavigate();
   const { state, setIsUnlocked } = useBlessing();
   const [passwordError, setPasswordError] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [posterPreview, setPosterPreview] = useState<string | null>(null);
+  const [previewHint, setPreviewHint] = useState('');
   const { toast, showToast, hideToast } = useToastState();
 
   const mockBlessingText = state.blessingText || '愿你前程似锦，繁花似梦\n心中有光，步履生辉\n所遇皆良人，所行皆坦途';
@@ -37,15 +41,43 @@ const BlessingViewPage: React.FC = () => {
 
   const handleSavePoster = async () => {
     setIsSaving(true);
+    showToast('正在生成海报…', '');
+
     try {
-      const success = await generateAndDownloadPoster({
+      const result = await generatePoster({
         blessingText: mockBlessingText,
         date: currentDate,
       });
-      if (success) {
-        showToast('已保存到相册', '可前往微信分享给 TA');
-      } else {
-        showToast('保存失败', '请重试');
+
+      if (!result.success || !result.dataUrl) {
+        showToast('生成失败', '请重试');
+        return;
+      }
+
+      const platform = detectPlatform();
+
+      switch (platform) {
+        case 'wechat':
+          // 微信内置浏览器：显示预览 + 引导
+          setPosterPreview(result.dataUrl);
+          setPreviewHint('长按图片保存，或点击右上角「…」在浏览器打开');
+          showToast('已生成海报', '长按图片保存到相册');
+          break;
+
+        case 'ios':
+          // iOS Safari：显示预览供长按保存
+          setPosterPreview(result.dataUrl);
+          setPreviewHint('长按图片保存到相册');
+          showToast('已生成海报', '请长按图片保存到相册');
+          break;
+
+        case 'android':
+        case 'desktop':
+        default:
+          // Android / Desktop：直接下载
+          downloadPoster(result.dataUrl);
+          showToast('已生成海报', '正在保存');
+          break;
       }
     } catch (error) {
       console.error('保存海报失败:', error);
@@ -142,15 +174,28 @@ const BlessingViewPage: React.FC = () => {
         </main>
       </div>
 
+      {/* 海报预览弹窗 */}
+      <PosterPreviewModal
+        imageUrl={posterPreview || ''}
+        visible={!!posterPreview}
+        onClose={() => setPosterPreview(null)}
+        hint={previewHint}
+      />
+
       <div className="sticky bottom-0 p-5 bg-background/80 backdrop-blur-sm">
         <Button
           variant="gold"
           size="full"
           onClick={handleSavePoster}
+          disabled={isSaving}
           className="gap-2 font-semibold animate-fade-in"
         >
-          <Download className="w-5 h-5" />
-          保存祝福海报
+          {isSaving ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Download className="w-5 h-5" />
+          )}
+          {isSaving ? '正在生成…' : '保存祝福海报'}
         </Button>
 
         <p className="text-center text-brand-gold/60 text-sm mt-4">
