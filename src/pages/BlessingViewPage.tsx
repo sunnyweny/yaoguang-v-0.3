@@ -21,7 +21,7 @@ const BlessingViewPage: React.FC = () => {
   const { toast, showToast, hideToast } = useToastState();
 
   const mockBlessingText = state.blessingText || '愿你前程似锦，繁花似梦\n心中有光，步履生辉\n所遇皆良人，所行皆坦途';
-
+const displayBlessingText = state.blessingText || mockBlessingText;
   const needsPassword = state.passwordEnabled && !state.isUnlocked;
 
   const handlePasswordComplete = (password: string) => {
@@ -45,7 +45,8 @@ const BlessingViewPage: React.FC = () => {
 
     try {
       const result = await generatePoster({
-        blessingText: mockBlessingText,
+        blessingText: displayBlessingText,
+        
         date: currentDate,
       });
 
@@ -161,7 +162,7 @@ const BlessingViewPage: React.FC = () => {
               <div className="px-8 py-16 min-h-[400px] flex flex-col justify-between">
                 <div className="flex-1 flex items-center justify-center">
                   <p className="text-xl text-card-foreground leading-loose text-center whitespace-pre-line font-medium">
-                    {mockBlessingText}
+                    {displayBlessingText}
                   </p>
                 </div>
 

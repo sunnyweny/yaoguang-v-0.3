@@ -16,6 +16,9 @@ interface BlessingContextType {
   setPassword: (password: string) => void;
   setIsUnlocked: (unlocked: boolean) => void;
   resetState: () => void;
+  nfcId: string | null; // 新增 NFC ID 状态
+  setNfcId: (id: string | null) => void; // 新增设置函数
+
 }
 
 const initialState: BlessingState = {
@@ -30,7 +33,8 @@ const BlessingContext = createContext<BlessingContextType | undefined>(undefined
 
 export const BlessingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<BlessingState>(initialState);
-
+  // 新增独立的 nfcId 状态
+  const [nfcId, setNfcId] = useState<string | null>(null);
   const setHasBlessing = (value: boolean) => {
     setState(prev => ({ ...prev, hasBlessing: value }));
   };
@@ -40,8 +44,8 @@ export const BlessingProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const setPasswordEnabled = (enabled: boolean) => {
-    setState(prev => ({ 
-      ...prev, 
+    setState(prev => ({
+      ...prev,
       passwordEnabled: enabled,
       password: enabled ? generatePassword() : ''
     }));
@@ -58,17 +62,22 @@ export const BlessingProvider: React.FC<{ children: ReactNode }> = ({ children }
   const resetState = () => {
     setState(initialState);
   };
-
+  // 定义 setNfcId 函数
+  const handleSetNfcId = (id: string | null) => {
+    setNfcId(id);
+  };
   return (
-    <BlessingContext.Provider 
-      value={{ 
-        state, 
-        setHasBlessing, 
-        setBlessingText, 
-        setPasswordEnabled, 
+    <BlessingContext.Provider
+      value={{
+        state,
+        setHasBlessing,
+        setBlessingText,
+        setPasswordEnabled,
         setPassword,
         setIsUnlocked,
-        resetState 
+        resetState,
+        nfcId,
+        setNfcId
       }}
     >
       {children}
