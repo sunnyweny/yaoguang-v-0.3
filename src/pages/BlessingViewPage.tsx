@@ -7,11 +7,13 @@ import { BrandLogo } from '@/components/BrandLogo';
 import { useBlessing } from '@/context/BlessingContext';
 import { Lock, Download } from 'lucide-react';
 import { Toast, useToastState } from '@/components/Toast';
+import { generateAndDownloadPoster } from '@/utils/posterGenerator';
 
 const BlessingViewPage: React.FC = () => {
   const navigate = useNavigate();
   const { state, setIsUnlocked } = useBlessing();
   const [passwordError, setPasswordError] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast, showToast, hideToast } = useToastState();
 
   const mockBlessingText = state.blessingText || '愿你前程似锦，繁花似梦\n心中有光，步履生辉\n所遇皆良人，所行皆坦途';
@@ -27,20 +29,35 @@ const BlessingViewPage: React.FC = () => {
     }
   };
 
-  const handleSavePoster = () => {
-    // 占位实现：仅提示，避免引入导致编译问题的依赖
-    showToast('已保存到相册', '可前往微信分享给 TA');
-  };
-
-  const handleBack = () => {
-    navigate('/home');
-  };
-
   const currentDate = new Date().toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
+
+  const handleSavePoster = async () => {
+    setIsSaving(true);
+    try {
+      const success = await generateAndDownloadPoster({
+        blessingText: mockBlessingText,
+        date: currentDate,
+      });
+      if (success) {
+        showToast('已保存到相册', '可前往微信分享给 TA');
+      } else {
+        showToast('保存失败', '请重试');
+      }
+    } catch (error) {
+      console.error('保存海报失败:', error);
+      showToast('保存失败', '请重试');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleBack = () => {
+    navigate('/home');
+  };
 
   // 锁定状态：输入密码
   if (needsPassword) {
