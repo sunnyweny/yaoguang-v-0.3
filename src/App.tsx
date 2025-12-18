@@ -21,15 +21,17 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* 1. NFC 路径：捕获任何路径参数，并将其传递给 EntryPage */}
-            <Route path="/:nfcId" element={<EntryPage />} />
-            {/* 2. 没有参数时访问 EntryPage */}
+            {/* 没有参数时访问 EntryPage */}
             <Route path="/" element={<EntryPage />} />
             
             <Route path="/home" element={<HomePage />} />
             <Route path="/edit" element={<BlessingEditPage />} />
             <Route path="/success" element={<BlessingSuccessPage />} />
             <Route path="/view" element={<BlessingViewPage />} />
+           
+            {/* NFC 路径：捕获任何路径参数，并将其传递给 EntryPage */}
+            <Route path="/:nfcId" element={<EntryPage />} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
