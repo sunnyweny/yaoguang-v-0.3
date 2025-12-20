@@ -3,80 +3,83 @@ import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/MobileLayout';
 import { Button } from '@/components/ui/button';
 import { useBlessing } from '@/context/BlessingContext';
-import { Toast, useToastState } from '@/components/Toast';
 import { Check, Copy } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast'; // 使用 toast
 
 const BlessingSuccessPage: React.FC = () => {
   const navigate = useNavigate();
-  const { state, setIsUnlocked } = useBlessing();
-  const { toast, showToast, hideToast } = useToastState();
+  const { toast } = useToast();
+  
+  const { 
+    password, 
+    isPasswordEnabled, 
+    nfcId 
+  } = useBlessing();
 
   const copyPassword = () => {
-    if (state.password) {
-      navigator.clipboard.writeText(state.password);
-      showToast('密码已复制');
+    if (password) {
+      navigator.clipboard.writeText(password);
+      toast({ description: "密码已复制" });
     }
   };
 
   const copyMessage = () => {
     let message = '有一段话想让你看到。手机轻触珠宝，即可读到我写给你的祝福。';
-    if (state.passwordEnabled && state.password) {
-      message += `\n查看密码：${state.password}`;
+    if (isPasswordEnabled && password) {
+      message += `\n查看密码：${password}`;
     }
     navigator.clipboard.writeText(message);
-    showToast('已复制，可发送给 TA');
+    toast({ description: "已复制，可发送给 TA" });
   };
 
   const handleViewBlessing = () => {
-    setIsUnlocked(true);
+    // 这里的逻辑直接跳转到查看页，查看页会根据 Context 里的密码状态判断是否需要输入
     navigate('/view');
   };
 
   return (
     <MobileLayout className="min-h-screen flex flex-col" useSecondaryBg>
-      <Toast message={toast.message} visible={toast.visible} onHide={hideToast} />
-
       {/* Main Content */}
       <main className="flex-1 px-5 py-10 space-y-5 overflow-y-auto">
         {/* Success Header */}
         <div className="text-center space-y-4 animate-fade-in pt-4">
-          <div className="w-24 h-24 mx-auto rounded-full bg-brand-gold flex items-center justify-center shadow-card-custom">
-            <Check className="w-12 h-12 text-white" strokeWidth={3} />
+          <div className="w-20 h-20 mx-auto rounded-full bg-brand-gold flex items-center justify-center shadow-lg">
+            <Check className="w-10 h-10 text-white" strokeWidth={3} />
           </div>
-          <h1 className="text-xl font-medium text-foreground">
+          <h1 className="text-xl font-semibold text-foreground">
             你的祝福已成功保存
           </h1>
+          
         </div>
 
         {/* Password Status Card */}
         <div className="animate-fade-in-up stagger-1">
-          <div className="bg-card rounded-2xl p-5 shadow-card-custom">
-            <h3 className="font-semibold text-card-foreground text-lg mb-3">密码保护</h3>
+          <div className="bg-card rounded-2xl p-5 shadow-sm border border-border/40">
+            <h3 className="font-semibold text-card-foreground text-base mb-3">密码保护</h3>
             
-            {state.passwordEnabled && state.password ? (
+            {isPasswordEnabled && password ? (
               <>
-                {/* Password display box */}
-                <div className="bg-background border border-primary/30 rounded-xl p-4 mb-3">
-                  <p className="text-sm text-primary/70 mb-1">系统生成密码</p>
+                <div className="bg-background border border-brand-gold/30 rounded-xl p-4 mb-3">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">访问密码</p>
                   <div className="flex items-center justify-between">
-                    <p className="text-3xl font-bold text-primary tracking-[0.15em]">
-                      {state.password}
+                    <p className="text-3xl font-bold text-brand-gold tracking-[0.15em]">
+                      {password}
                     </p>
                     <button
                       onClick={copyPassword}
-                      className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-primary/10 transition-colors"
+                      className="w-10 h-10 rounded-lg flex items-center justify-center bg-brand-gold/10 hover:bg-brand-gold/20 transition-colors"
                     >
-                      <Copy className="w-5 h-5 text-primary/70" />
+                      <Copy className="w-5 h-5 text-brand-gold" />
                     </button>
                   </div>
                 </div>
-                <p className="text-sm text-card-foreground/70 leading-relaxed">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   已启用密码，收礼人查看祝福需输入此密码。
                 </p>
               </>
             ) : (
-              <p className="text-sm text-card-foreground/70 leading-relaxed">
-                您未启用密码，任何人都可以查看您的祝福。
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                未启用密码，任何人触碰珠宝都可以直接查看您的祝福。
               </p>
             )}
           </div>
@@ -84,18 +87,18 @@ const BlessingSuccessPage: React.FC = () => {
 
         {/* Message Preview Card */}
         <div className="animate-fade-in-up stagger-2">
-          <div className="bg-card rounded-2xl p-5 shadow-card-custom">
-            <h3 className="font-semibold text-card-foreground text-lg mb-3">
-              发送给 <span className="italic">TA</span> 的消息
+          <div className="bg-card rounded-2xl p-5 shadow-sm border border-border/40">
+            <h3 className="font-semibold text-card-foreground text-base mb-3">
+              发送给 <em>TA </em> 的消息
             </h3>
 
-            <div className="bg-brand-cream rounded-xl p-4 relative">
+            <div className="bg-brand-cream/50 rounded-xl p-4 relative border border-brand-gold/10">
               <p className="text-card-foreground text-sm leading-relaxed pr-8">
                 有一段话想让你看到。手机轻触珠宝，即可读到我写给你的祝福。
-                {state.passwordEnabled && state.password && (
+                {isPasswordEnabled && password && (
                   <>
                     <br />
-                    查看密码：{state.password}
+                    查看密码：{password}
                   </>
                 )}
               </p>
@@ -103,7 +106,7 @@ const BlessingSuccessPage: React.FC = () => {
                 onClick={copyMessage}
                 className="absolute bottom-4 right-4 w-8 h-8 rounded-lg flex items-center justify-center hover:bg-brand-gold/10 transition-colors"
               >
-                <Copy className="w-4 h-4 text-muted-foreground" />
+                <Copy className="w-4 h-4 text-brand-gold" />
               </button>
             </div>
           </div>
@@ -111,12 +114,12 @@ const BlessingSuccessPage: React.FC = () => {
       </main>
 
       {/* Bottom Action */}
-      <div className="sticky bottom-0 p-5 bg-background/80 backdrop-blur-sm">
+      <div className="p-5">
         <Button
           variant="gold"
           size="full"
           onClick={handleViewBlessing}
-          className="font-semibold animate-fade-in"
+          className="font-semibold shadow-md"
         >
           查看祝福
         </Button>

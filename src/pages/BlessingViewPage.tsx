@@ -1,35 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/MobileLayout';
 import { Button } from '@/components/ui/button';
 import { PasswordInput } from '@/components/PasswordInput';
 import { BrandLogo } from '@/components/BrandLogo';
 import { useBlessing } from '@/context/BlessingContext';
-import { Lock, Download, Loader2 } from 'lucide-react';
-import { Toast, useToastState } from '@/components/Toast';
+import { Lock, Download, Loader2, ArrowLeft } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { generatePoster, downloadPoster } from '@/utils/posterGenerator';
 import { detectPlatform } from '@/utils/platformDetect';
 import { PosterPreviewModal } from '@/components/PosterPreviewModal';
 
 const BlessingViewPage: React.FC = () => {
   const navigate = useNavigate();
-  const { state, setIsUnlocked } = useBlessing();
+  const { toast } = useToast();
+  
+  // 1. 修正解构逻辑
+  const { 
+    blessingText, 
+    password, 
+    isPasswordEnabled,
+    // 如果 Context 里没有 isUnlocked，我们可以用本地 State 代替，或者从 Context 取
+    // 假设我们现在用本地 state 处理本次访问的解锁
+  } = useBlessing();
+
+  const [localIsUnlocked, setLocalIsUnlocked] = useState(!isPasswordEnabled);
   const [passwordError, setPasswordError] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [posterPreview, setPosterPreview] = useState<string | null>(null);
   const [previewHint, setPreviewHint] = useState('');
-  const { toast, showToast, hideToast } = useToastState();
 
-  const mockBlessingText = state.blessingText || '愿你前程似锦，繁花似梦\n心中有光，步履生辉\n所遇皆良人，所行皆坦途';
-const displayBlessingText = state.blessingText || mockBlessingText;
-  const needsPassword = state.passwordEnabled && !state.isUnlocked;
+  // 2. 文本显示逻辑：如果 Context 为空，显示默认 Mock 文本
+  const displayBlessingText = blessingText || '愿你前程似锦，繁花似梦\n心中有光，步履生辉\n所遇皆良人，所行皆坦途';
 
-  const handlePasswordComplete = (password: string) => {
-    if (password === state.password) {
-      setIsUnlocked(true);
+  // 3. 密码验证
+  const handlePasswordComplete = (inputPwd: string) => {
+    if (inputPwd === password) {
+      setLocalIsUnlocked(true);
       setPasswordError(false);
+      toast({ description: "解锁成功" });
     } else {
       setPasswordError(true);
+      toast({ variant: "destructive", description: "密码错误" });
     }
   };
 
@@ -39,136 +51,92 @@ const displayBlessingText = state.blessingText || mockBlessingText;
     day: 'numeric',
   });
 
+  // 4. 海报生成逻辑
   const handleSavePoster = async () => {
     setIsSaving(true);
-    showToast('正在生成海报…', '');
-
     try {
       const result = await generatePoster({
         blessingText: displayBlessingText,
-        
         date: currentDate,
       });
 
       if (!result.success || !result.dataUrl) {
-        showToast('生成失败', '请重试');
+        toast({ variant: "destructive", description: "海报生成失败" });
         return;
       }
 
       const platform = detectPlatform();
-
-      switch (platform) {
-        case 'wechat':
-          // 微信内置浏览器：显示预览 + 引导
-          setPosterPreview(result.dataUrl);
-          setPreviewHint('长按图片保存，或点击右上角「…」在浏览器打开');
-          showToast('已生成海报', '长按图片保存到相册');
-          break;
-
-        case 'ios':
-          // iOS Safari：显示预览供长按保存
-          setPosterPreview(result.dataUrl);
-          setPreviewHint('长按图片保存到相册');
-          showToast('已生成海报', '请长按图片保存到相册');
-          break;
-
-        case 'android':
-        case 'desktop':
-        default:
-          // Android / Desktop：直接下载
-          downloadPoster(result.dataUrl);
-          showToast('已生成海报', '正在保存');
-          break;
+      if (platform === 'wechat' || platform === 'ios') {
+        setPosterPreview(result.dataUrl);
+        setPreviewHint(platform === 'wechat' ? '长按图片保存' : '长按保存到相册');
+      } else {
+        downloadPoster(result.dataUrl);
+        toast({ description: "正在下载海报" });
       }
     } catch (error) {
-      console.error('保存海报失败:', error);
-      showToast('保存失败', '请重试');
+      console.error('海报保存失败:', error);
+      toast({ variant: "destructive", description: "保存失败，请重试" });
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleBack = () => {
-    navigate('/home');
-  };
-
-  // 锁定状态：输入密码
-  if (needsPassword) {
+  // --- 渲染逻辑 A: 需要密码 ---
+  if (!localIsUnlocked && isPasswordEnabled) {
     return (
       <MobileLayout className="min-h-screen flex flex-col items-center justify-center px-6" useSecondaryBg>
-        <Toast
-          message={toast.message}
-          subMessage={toast.subMessage}
-          visible={toast.visible}
-          onHide={hideToast}
-        />
-
         <div className="w-full max-w-sm animate-fade-in">
-          <div className="bg-card rounded-3xl p-8 shadow-card-custom">
+          <div className="bg-card rounded-3xl p-8 shadow-xl border border-border/50">
             <div className="flex justify-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-brand-gold/15 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-brand-gold/10 flex items-center justify-center">
                 <Lock className="w-7 h-7 text-brand-gold" />
               </div>
             </div>
 
-            <h2 className="text-xl font-semibold text-card-foreground text-center mb-6">请输入密码</h2>
+            <h2 className="text-xl font-semibold text-center mb-6">请输入查看密码</h2>
 
-            <div className="mb-6">
-              <PasswordInput
-                onComplete={handlePasswordComplete}
-                error={passwordError}
-                onErrorClear={() => setPasswordError(false)}
-              />
-            </div>
+            <PasswordInput
+              onComplete={handlePasswordComplete}
+              error={passwordError}
+              onErrorClear={() => setPasswordError(false)}
+            />
 
-            {passwordError ? (
-              <p className="text-destructive text-sm text-center animate-fade-in">
-                密码不正确，请再试一次
-              </p>
-            ) : (
-              <p className="text-muted-foreground text-sm text-center leading-relaxed">
-                这份祝福已启用密码，请向送礼人索取查看密码
-              </p>
-            )}
+            <p className="mt-6 text-muted-foreground text-sm text-center leading-relaxed">
+              这份祝福已启用密码保护<br/>请向送礼人索取访问密码
+            </p>
           </div>
         </div>
       </MobileLayout>
     );
   }
 
-  // 解锁状态：祝福海报
+  // --- 渲染逻辑 B: 解锁后展示 ---
   return (
     <MobileLayout className="min-h-screen flex flex-col" useSecondaryBg>
-      <Toast
-        message={toast.message}
-        subMessage={toast.subMessage}
-        visible={toast.visible}
-        onHide={hideToast}
-      />
+      <div className="flex-1 flex flex-col bg-background relative overflow-hidden">
+        {/* 背景装饰感 */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('/pattern.png')] bg-repeat" />
 
-      <div className="flex-1 flex flex-col bg-background bg-pattern">
-        <header className="pt-8 pb-6">
-          <BrandLogo size="md" />
+        <header className="pt-8 pb-4 flex items-center px-4">
+            <button onClick={() => navigate('/home')} className="p-2"><ArrowLeft className="w-5 h-5 text-brand-gold"/></button>
+            <div className="flex-1 text-center pr-9"><BrandLogo size="sm" /></div>
         </header>
 
-        <main className="flex-1 px-5 pb-6">
-          <div className="animate-fade-in-up">
-            <div className="bg-card rounded-2xl shadow-card-custom overflow-hidden relative">
+        <main className="flex-1 px-5 py-4">
+          <div className="animate-fade-in-up h-full">
+            <div className="bg-card rounded-2xl shadow-xl overflow-hidden relative border border-brand-gold/20 h-full flex flex-col">
+              {/* 四角装饰 */}
               <div className="absolute top-4 left-4 w-6 h-6 border-l-2 border-t-2 border-brand-gold/30" />
               <div className="absolute top-4 right-4 w-6 h-6 border-r-2 border-t-2 border-brand-gold/30" />
               <div className="absolute bottom-4 left-4 w-6 h-6 border-l-2 border-b-2 border-brand-gold/30" />
               <div className="absolute bottom-4 right-4 w-6 h-6 border-r-2 border-b-2 border-brand-gold/30" />
 
-              <div className="px-8 py-16 min-h-[400px] flex flex-col justify-between">
-                <div className="flex-1 flex items-center justify-center">
-                  <p className="text-xl text-card-foreground leading-loose text-center whitespace-pre-line font-medium">
-                    {displayBlessingText}
-                  </p>
-                </div>
-
-                <div className="text-center pt-8">
-                  <p className="text-muted-foreground text-sm">{currentDate}</p>
-                </div>
+              <div className="px-8 py-16 flex-1 flex flex-col justify-center items-center text-center">
+                <p className="text-xl text-card-foreground leading-[2] whitespace-pre-line font-serif italic">
+                  “ {displayBlessingText} ”
+                </p>
+                <div className="mt-12 w-12 h-px bg-brand-gold/30" />
+                <p className="mt-4 text-muted-foreground text-sm tracking-widest">{currentDate}</p>
               </div>
             </div>
           </div>
@@ -183,23 +151,18 @@ const displayBlessingText = state.blessingText || mockBlessingText;
         hint={previewHint}
       />
 
-      <div className="sticky bottom-0 p-5 bg-background/80 backdrop-blur-sm">
+      <div className="p-5 space-y-4">
         <Button
           variant="gold"
           size="full"
           onClick={handleSavePoster}
           disabled={isSaving}
-          className="gap-2 font-semibold animate-fade-in"
+          className="gap-2 font-semibold"
         >
-          {isSaving ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <Download className="w-5 h-5" />
-          )}
-          {isSaving ? '正在生成…' : '保存祝福海报'}
+          {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+          {isSaving ? '正在生成海报...' : '保存祝福海报'}
         </Button>
-
-        <p className="text-center text-brand-gold/60 text-sm mt-4">
+        <p className="text-center text-brand-gold/60 text-xs">
           祝你新年快乐·诸善如意·阖家幸福
         </p>
       </div>
