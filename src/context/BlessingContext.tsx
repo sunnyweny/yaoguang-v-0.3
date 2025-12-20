@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode,useCallback } from 'react';
 import { Blessings as initialData } from '@/pages/mydata';
 
 interface BlessingData {
@@ -48,31 +48,27 @@ export const BlessingProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // 2. 存在性校验：本地 mydata 有 或者 服务器 remote_db 有，都算通过
-  const checkIdExists = (id: string) => {
+  const checkIdExists = useCallback((id: string) => {
     const inLocal = (initialData as BlessingData[]).some(item => item.nfc_id === id);
     const inServer = serverDb.some(item => item.nfc_id === id);
     return inLocal || inServer;
-  };
+  }, [serverDb]);
 
   // 3. 加载数据：优先用服务器的，没有再用本地初始的
-  const loadDeviceData = async (id: string) => {
+const loadDeviceData = useCallback(async (id: string) => {
     setNfcId(id);
     try {
-      // 每次加载前重新拉取最新数据，确保多机同步
       const res = await fetch('/api.php');
-      const remoteData: BlessingData[] = await res.json();
+      const remoteData = await res.json();
       setServerDb(remoteData);
 
       const serverMatch = remoteData.find(item => item.nfc_id === id);
       const localMatch = (initialData as BlessingData[]).find(item => item.nfc_id === id);
-      
       const device = serverMatch || localMatch;
 
       if (device && device.blessing_text && device.blessing_text !== "NULL") {
         setBlessingText(device.blessing_text);
-        const isPwd = device.is_password_enabled === true || 
-                      String(device.is_password_enabled).toUpperCase() === "TRUE";
-        setPasswordEnabled(isPwd);
+        setPasswordEnabled(device.is_password_enabled === true || String(device.is_password_enabled).toUpperCase() === "TRUE");
         setPassword(device.password);
         setHasBlessing(true);
       } else {
@@ -82,7 +78,7 @@ export const BlessingProvider = ({ children }: { children: ReactNode }) => {
     } catch (e) {
       console.error("加载失败");
     }
-  };
+  }, [serverDb]);
 
   const resetState = () => {
     setBlessingText("");

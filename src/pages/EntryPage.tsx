@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MobileLayout } from '@/components/MobileLayout';
 import { useBlessing } from '@/context/BlessingContext';
- import { Blessings as initialData } from './mydata';
+import { Blessings as initialData } from './mydata';
 import { Gift, Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import { BrandLogo } from '@/components/BrandLogo';
 import { Button } from '@/components/ui/button';
@@ -13,16 +13,16 @@ const EntryPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { nfcId: urlNfcId } = useParams<{ nfcId: string }>();
-  const { loadDeviceData, resetState, setHasBlessing, setPasswordEnabled,checkIdExists } = useBlessing();
-
+  const { loadDeviceData, resetState, setHasBlessing, setPasswordEnabled, checkIdExists } = useBlessing();
+  const [processingId, setProcessingId] = useState<string | null>(null);
   // 定义状态
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     console.log("当前接收到的 ID:", urlNfcId);
-console.log("当前内存中的全部 ID:", initialData.map(d => d.nfc_id));
-    if (!urlNfcId) return;
+    console.log("当前内存中的全部 ID:", initialData.map(d => d.nfc_id));
+    if (!urlNfcId || urlNfcId === processingId) return;
+
     // 1. 正则校验：4位数字 + 4位大写字母
-   // 1. 正则校验：格式检查
     const idRegex = /^[0-9A-Z]{8}$/;
     if (!idRegex.test(urlNfcId)) {
       setError("格式不规范");
@@ -37,7 +37,7 @@ console.log("当前内存中的全部 ID:", initialData.map(d => d.nfc_id));
 
     // 3. 只有通过了前两步，才加载数据并跳转
     setError(null);
-    loadDeviceData(urlNfcId);
+    setProcessingId(urlNfcId);
 
     const timer = setTimeout(() => {
       navigate('/home', { replace: true });
