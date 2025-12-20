@@ -22,55 +22,65 @@ interface BlessingContextType {
   resetState: () => void;
   saveToMockDB: (overrideData?: { text: string; pwdEnabled: boolean; pwd: string | null }) => void;
   loadDeviceData: (id: string) => void;
+  checkIdExists: (id: string) => boolean;
 }
 
 const BlessingContext = createContext<BlessingContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'NFC_BLESSING_DATABASE';
-
 export const BlessingProvider = ({ children }: { children: ReactNode }) => {
-  const [db, setDb] = useState<BlessingData[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return initialData as BlessingData[];
-      }
-    }
-    return initialData as BlessingData[];
-  });
-
+  // serverDb 用于存放从 PHP 获取的所有动态数据
+  const [serverDb, setServerDb] = useState<BlessingData[]>([]);
+  
   const [nfcId, setNfcId] = useState<string | null>(null);
   const [hasBlessing, setHasBlessing] = useState(false);
   const [blessingText, setBlessingText] = useState("");
   const [isPasswordEnabled, setPasswordEnabled] = useState(false);
   const [password, setPassword] = useState<string | null>(null);
 
+  // 1. 初始化时，先去 PHP 拿一次数据
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
-  }, [db]);
+    fetch('/api.php')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setServerDb(data);
+      })
+      .catch(err => console.error("初始同步失败，请检查 api.php 是否存在", err));
+  }, []);
 
-  const loadDeviceData = (id: string) => {
-    // 强制先从 localStorage 获取最新数据，防止内存 db 未同步
-    const saved = localStorage.getItem(STORAGE_KEY);
-    const currentDb: BlessingData[] = saved ? JSON.parse(saved) : db;
-    
-    const device = currentDb.find(item => item.nfc_id === id);
+  // 2. 存在性校验：本地 mydata 有 或者 服务器 remote_db 有，都算通过
+  const checkIdExists = (id: string) => {
+    const inLocal = (initialData as BlessingData[]).some(item => item.nfc_id === id);
+    const inServer = serverDb.some(item => item.nfc_id === id);
+    return inLocal || inServer;
+  };
+
+  // 3. 加载数据：优先用服务器的，没有再用本地初始的
+  const loadDeviceData = async (id: string) => {
     setNfcId(id);
-    
-    if (device && device.blessing_text && device.blessing_text !== "NULL") {
-      setBlessingText(device.blessing_text);
-      const isPwd = device.is_password_enabled === true || 
-                    String(device.is_password_enabled).toUpperCase() === "TRUE";
-      setPasswordEnabled(isPwd);
-      setPassword(device.password);
-      setHasBlessing(true);
-    } else {
-      setHasBlessing(false);
-      setBlessingText("");
-      setPasswordEnabled(false);
-      setPassword(null);
+    try {
+      // 每次加载前重新拉取最新数据，确保多机同步
+      const res = await fetch('/api.php');
+      const remoteData: BlessingData[] = await res.json();
+      setServerDb(remoteData);
+
+      const serverMatch = remoteData.find(item => item.nfc_id === id);
+      const localMatch = (initialData as BlessingData[]).find(item => item.nfc_id === id);
+      
+      const device = serverMatch || localMatch;
+
+      if (device && device.blessing_text && device.blessing_text !== "NULL") {
+        setBlessingText(device.blessing_text);
+        const isPwd = device.is_password_enabled === true || 
+                      String(device.is_password_enabled).toUpperCase() === "TRUE";
+        setPasswordEnabled(isPwd);
+        setPassword(device.password);
+        setHasBlessing(true);
+      } else {
+        setHasBlessing(false);
+        resetState();
+      }
+    } catch (e) {
+      console.error("加载失败");
     }
   };
 
@@ -81,7 +91,8 @@ export const BlessingProvider = ({ children }: { children: ReactNode }) => {
     setHasBlessing(false);
   };
 
-  const saveToMockDB = (overrideData?: { text: string; pwdEnabled: boolean; pwd: string | null }) => {
+  // 4. 保存数据：推送到 PHP 接口
+  const saveToMockDB = async (overrideData?: { text: string; pwdEnabled: boolean; pwd: string | null }) => {
     if (!nfcId) return;
 
     const final_text = overrideData ? overrideData.text : blessingText;
@@ -95,43 +106,37 @@ export const BlessingProvider = ({ children }: { children: ReactNode }) => {
       password: final_pwd,
     };
 
-    // 1. 更新内存数组状态
-    setDb(prev => {
-      const index = prev.findIndex(item => item.nfc_id === nfcId);
-      if (index > -1) {
-        const updated = [...prev];
-        updated[index] = newData;
-        return updated;
-      }
-      return [...prev, newData];
-    });
+    try {
+      // 发送到服务器
+      await fetch('/api.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newData)
+      });
 
-    // 2. 立即写入 LocalStorage，确保持久化
-    const saved = localStorage.getItem(STORAGE_KEY);
-    const currentDb: BlessingData[] = saved ? JSON.parse(saved) : (initialData as BlessingData[]);
-    const index = currentDb.findIndex(item => item.nfc_id === nfcId);
-    
-    let finalDb;
-    if (index > -1) {
-      finalDb = [...currentDb];
-      finalDb[index] = newData;
-    } else {
-      finalDb = [...currentDb, newData];
+      // 更新本地内存状态，让 UI 立即变化
+      setServerDb(prev => {
+        const filtered = prev.filter(item => item.nfc_id !== nfcId);
+        return [...filtered, newData];
+      });
+      
+      setHasBlessing(true);
+      setBlessingText(final_text);
+      setPasswordEnabled(final_pwdEnabled === true || String(final_pwdEnabled).toUpperCase() === "TRUE");
+      setPassword(final_pwd);
+      
+      console.log("多机同步保存成功");
+    } catch (e) {
+      console.error("同步到服务器失败", e);
+      alert("保存失败，请检查网络连接");
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(finalDb));
-    
-    // 3. 同步当前 Context 的所有 UI 状态
-    setHasBlessing(true);
-    setBlessingText(final_text);
-    setPasswordEnabled(final_pwdEnabled === true || String(final_pwdEnabled).toUpperCase() === "TRUE");
-    setPassword(final_pwd);
   };
 
   return (
     <BlessingContext.Provider value={{
       nfcId, hasBlessing, blessingText, isPasswordEnabled, password,
       setNfcId, setHasBlessing, setBlessingText, setPasswordEnabled, setPassword,
-      resetState, saveToMockDB, loadDeviceData
+      resetState, saveToMockDB, loadDeviceData, checkIdExists
     }}>
       {children}
     </BlessingContext.Provider>
