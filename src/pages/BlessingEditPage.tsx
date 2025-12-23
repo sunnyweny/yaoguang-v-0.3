@@ -60,22 +60,22 @@ const BlessingEditPage: React.FC = () => {
 
 
   const handleSave = () => {
-  if (text.trim()) {
-    // 传参数给保存函数，确保拿到的数据是最新的
-    saveToMockDB({
-      text: text,
-      pwdEnabled: passwordOn,
-      pwd: password
-    });
+    if (text.trim()) {
+      // 传参数给保存函数，确保拿到的数据是最新的
+      saveToMockDB({
+        text: text,
+        pwdEnabled: passwordOn,
+        pwd: password
+      });
 
-    toast({
-      title: "保存成功",
-      description: "祝福已成功写入标签",
-    });
+      toast({
+        title: "保存成功",
+        description: "祝福已成功写入标签",
+      });
 
-    navigate('/success');
-  }
-};
+      navigate('/success');
+    }
+  };
   const canSave = text.trim().length > 0;
 
   return (
@@ -99,24 +99,24 @@ const BlessingEditPage: React.FC = () => {
       {/* Main Content */}
       <main className="flex-1 px-5 py-6 space-y-4">
         {/* Text Input Card */}
-        <div className="bg-brand-cream rounded-2xl p-5 min-h-[200px] flex flex-col relative border border-brand-gold/20 shadow-sm">
+        <div className="bg-brand-cream/90 rounded-2xl p-5 min-h-[200px] flex flex-col relative border border-brand-gold/20 shadow-sm">
           <textarea
             value={text}
             onChange={handleTextChange}
             placeholder="写下你想送出的祝福..."
             className="flex-1 w-full bg-transparent border-0 resize-none 
-              text-black placeholder:text-muted-foreground/50
+              text-black placeholder:text-gray-600
               focus:outline-none text-base leading-relaxed font-sans"
           />
           <div className="flex justify-end pt-2">
-            <span className={`text-sm ${text.length >= MAX_CHARS ? 'text-destructive' : 'text-muted-foreground/60'}`}>
+            <span className={`text-sm ${text.length >= MAX_CHARS ? 'text-destructive' : 'text-gray-600'}`}>
               {text.length}/{MAX_CHARS}
             </span>
           </div>
         </div>
 
         {/* Password Toggle Card */}
-        <div className="bg-background/30 backdrop-blur-sm border border-border/30 rounded-2xl p-5">
+        <div className="bg-[hsl(165,35%,18%)] rounded-2xl p-5 border-2 border-[hsl(165,30%,25%)]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-foreground text-base">密码保护</h3>
             <Switch
@@ -127,9 +127,9 @@ const BlessingEditPage: React.FC = () => {
           </div>
 
           {passwordOn && (
-            <div className="bg-white/50 border border-brand-gold/30 rounded-xl p-4 mb-3 flex items-center justify-between animate-fade-in-up">
+            <div className="bg-[hsl(165,30%,22%)] rounded-xl p-4 mb-3 border-2 border-[hsl(165,25%,28%)] relative">
               <div>
-                <p className="text-xs text-muted-foreground mb-1">访问密码</p>
+                <p className="text-xs text-foreground mb-1">祝福钥匙</p>
                 <p className="text-3xl font-bold text-brand-gold tracking-[0.2em]">
                   {password || '----'}
                 </p>
@@ -138,9 +138,10 @@ const BlessingEditPage: React.FC = () => {
               {/* 刷新密码按钮 */}
               <button
                 onClick={generateRandomPassword}
-                className="w-10 h-10 rounded-full bg-brand-gold/10 flex items-center justify-center hover:bg-brand-gold/20 active:scale-90 transition-all"
+                className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-[hsl(165,25%,28%)] transition-colors"
+                aria-label="刷新密码"
               >
-                <RefreshCw className="w-5 h-5 text-brand-gold" />
+                <RefreshCw className="w-4 h-4 text-brand-gold" />
               </button>
             </div>
           )}

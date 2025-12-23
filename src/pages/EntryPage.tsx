@@ -17,35 +17,51 @@ const EntryPage: React.FC = () => {
   const [processingId, setProcessingId] = useState<string | null>(null);
   // 定义状态
   const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
-    console.log("当前接收到的 ID:", urlNfcId);
-    console.log("当前内存中的全部 ID:", initialData.map(d => d.nfc_id));
-    if (!urlNfcId || urlNfcId === processingId) return;
+ // 1. 在组件内部声明一个处理标志（放在 useState 附近）
+const [isInitialLoading, setIsInitialLoading] = useState(false);
 
-    // 1. 正则校验：4位数字 + 4位大写字母
-    const idRegex = /^[0-9A-Z]{8}$/;
-    if (!idRegex.test(urlNfcId)) {
-      setError("格式不规范");
-      return;
-    }
+useEffect(() => {
+  // 打印调试信息
+  console.log("当前接收到的 ID:", urlNfcId);
 
-    // 2. 存在性校验：检查 mydata 或 localStorage 中是否有这个 ID
-    if (!checkIdExists(urlNfcId)) {
-      setError("不存在该珠宝ID");
-      return;
-    }
+  // 如果没有 ID，或者正在处理中，则跳过，防止死循环
+  if (!urlNfcId || isInitialLoading) return;
 
-    // 3. 只有通过了前两步，才加载数据并跳转
+  // 1. 正则校验
+  const idRegex = /^[0-9A-Z]{8}$/;
+  if (!idRegex.test(urlNfcId)) {
+    setError("格式不规范");
+    return;
+  }
+
+  // 2. 存在性校验
+  // 注意：此处 checkIdExists 仅检查静态 initialData，以保证最快放行
+  if (!checkIdExists(urlNfcId)) {
+    setError("不存在该珠宝ID");
+    return;
+  }
+
+  // 3. 开始执行加载流程
+  const performEntry = async () => {
+    setIsInitialLoading(true); // 锁定状态，防止重复触发
     setError(null);
-    setProcessingId(urlNfcId);
 
-    const timer = setTimeout(() => {
+    try {
+      // 核心：执行异步加载（去 PHP 服务器拿数据）
+      await loadDeviceData(urlNfcId);
+      
+      // 加载完成后跳转
       navigate('/home', { replace: true });
-    }, 200);
+    } catch (err) {
+      console.error("加载失败:", err);
+      setError("感应数据读取失败，请刷新重试");
+      setIsInitialLoading(false); // 失败了才解锁
+    }
+  };
 
-    return () => clearTimeout(timer);
-  }, [urlNfcId, loadDeviceData, navigate, checkIdExists]);
+  performEntry();
 
+}, [urlNfcId, navigate]);
   // 下面原有的渲染逻辑保持不变...
   if (urlNfcId) {
     return (

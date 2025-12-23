@@ -24,9 +24,9 @@ const BlessingSuccessPage: React.FC = () => {
   };
 
   const copyMessage = () => {
-    let message = '有一段话想让你看到。手机轻触珠宝，即可读到我写给你的祝福。';
+    let message = '有一段话想让你看到～\n用手机轻轻触碰珠宝，就能读到我写给你的祝福。';
     if (isPasswordEnabled && password) {
-      message += `\n查看密码：${password}`;
+      message += `\n\n祝福钥匙：${password}`;
     }
     navigator.clipboard.writeText(message);
     toast({ description: "已复制，可发送给 TA" });
@@ -92,19 +92,21 @@ const BlessingSuccessPage: React.FC = () => {
               发送给 <em>TA </em> 的消息
             </h3>
 
-            <div className="bg-brand-cream/50 rounded-xl p-4 relative border border-brand-gold/10">
-              <p className="text-card-foreground text-sm leading-relaxed pr-8">
-                有一段话想让你看到。手机轻触珠宝，即可读到我写给你的祝福。
-                {isPasswordEnabled && password && (
-                  <>
-                    <br />
-                    查看密码：{password}
-                  </>
-                )}
+           <div className="bg-brand-cream rounded-2xl p-4 relative">
+              <p className="text-card-foreground text-sm leading-relaxed">
+                有一段话想让你看到～
+                <br />
+                用手机轻轻触碰珠宝，就能读到我写给你的祝福。
               </p>
+                {isPasswordEnabled && password && (
+                    <div className="mt-3 pt-3 border-t border-card-foreground/10">
+                    <p className="text-card-foreground/70 text-sm">
+                    祝福钥匙：{password}
+                  </p></div>
+                )}
               <button
                 onClick={copyMessage}
-                className="absolute bottom-4 right-4 w-8 h-8 rounded-lg flex items-center justify-center hover:bg-brand-gold/10 transition-colors"
+                className="absolute bottom-2 right-2 w-8 h-8 rounded-lg flex items-center justify-center hover:bg-brand-gold/10 transition-colors"
               >
                 <Copy className="w-4 h-4 text-brand-gold" />
               </button>

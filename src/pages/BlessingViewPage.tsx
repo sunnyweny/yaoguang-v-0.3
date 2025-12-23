@@ -93,7 +93,7 @@ const BlessingViewPage: React.FC = () => {
               </div>
             </div>
 
-            <h2 className="text-xl font-semibold text-center mb-6">请输入查看密码</h2>
+            <h2 className="text-zinc-800 font-semibold text-center mb-6">请输入查看密码</h2>
 
             <PasswordInput
               onComplete={handlePasswordComplete}
@@ -119,7 +119,7 @@ const BlessingViewPage: React.FC = () => {
 
         <header className="pt-8 pb-4 flex items-center px-4">
             <button onClick={() => navigate('/home')} className="p-2"><ArrowLeft className="w-5 h-5 text-brand-gold"/></button>
-            <div className="flex-1 text-center pr-9"><BrandLogo size="sm" /></div>
+            <div className="flex-1 text-center pr-9"><BrandLogo size="md" /></div>
         </header>
 
         <main className="flex-1 px-5 py-4">

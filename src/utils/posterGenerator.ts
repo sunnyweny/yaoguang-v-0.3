@@ -1,7 +1,7 @@
 /**
  * 使用 Canvas API 生成祝福海报
  */
-
+import brandLogoImg from '@/assets/brand-logo.png';
 interface PosterOptions {
   blessingText: string;
   date: string;
@@ -51,36 +51,22 @@ export async function generatePoster(options: PosterOptions): Promise<GenerateRe
   ctx.globalAlpha = 1;
 
   // 绘制品牌 logo 区域
-  const logoY = 120;
-  
-  // Logo 圆圈
-  ctx.beginPath();
-  ctx.arc(width / 2, logoY, 45, 0, Math.PI * 2);
-  ctx.strokeStyle = '#c9a962';
-  ctx.lineWidth = 2;
-  ctx.stroke();
+  const logoSize = 240; // 根据需要调整图片显示大小
+  const logoX = (width - logoSize) / 2; // 水平居中
+  const logoY = 60; // 调整垂直位置
 
-  // Logo 内山形图案
-  ctx.beginPath();
-  ctx.moveTo(width / 2 - 25, logoY + 15);
-  ctx.lineTo(width / 2 - 5, logoY - 15);
-  ctx.lineTo(width / 2 + 5, logoY - 5);
-  ctx.lineTo(width / 2 + 25, logoY - 20);
-  ctx.lineTo(width / 2 + 25, logoY + 15);
-  ctx.closePath();
-  ctx.fillStyle = '#c9a962';
-  ctx.fill();
+  // 2. 创建并加载图片对象
+  const logoImage = new Image();
+  logoImage.src = brandLogoImg;
 
-  // 品牌名称
-  ctx.font = 'bold 42px "Noto Serif SC", serif';
-  ctx.fillStyle = '#c9a962';
-  ctx.textAlign = 'center';
-  ctx.fillText('瑶 | 光 | 阁', width / 2, logoY + 90);
+  // 3. 必须确保图片加载完成后再绘制（这是一个 Canvas 的坑）
+  await new Promise((resolve) => {
+    logoImage.onload = resolve;
+    logoImage.onerror = resolve; // 防止图片加载失败导致程序卡死
+  });
 
-  // 英文副标题
-  ctx.font = '16px "Noto Sans SC", sans-serif';
-  ctx.fillStyle = 'rgba(201, 169, 98, 0.7)';
-  ctx.fillText('YAO GUANG GE', width / 2, logoY + 120);
+  // 4. 绘制图片到海报
+  ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
 
   // 绘制祝福卡片
   const cardX = 50;

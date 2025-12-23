@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode,useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Blessings as initialData } from '@/pages/mydata';
 
 interface BlessingData {
@@ -6,6 +6,7 @@ interface BlessingData {
   blessing_text: string | null;
   is_password_enabled: boolean | string;
   password: string | null;
+  video_index: number;//视频
 }
 
 interface BlessingContextType {
@@ -14,11 +15,13 @@ interface BlessingContextType {
   blessingText: string;
   isPasswordEnabled: boolean;
   password: string | null;
+  videoIndex: number;
   setNfcId: (id: string | null) => void;
   setHasBlessing: (val: boolean) => void;
   setBlessingText: (text: string) => void;
   setPasswordEnabled: (val: boolean) => void;
   setPassword: (pwd: string | null) => void;
+  setVideoIndex: (val: number) => void;
   resetState: () => void;
   saveToMockDB: (overrideData?: { text: string; pwdEnabled: boolean; pwd: string | null }) => void;
   loadDeviceData: (id: string) => void;
@@ -30,13 +33,13 @@ const BlessingContext = createContext<BlessingContextType | undefined>(undefined
 export const BlessingProvider = ({ children }: { children: ReactNode }) => {
   // serverDb 用于存放从 PHP 获取的所有动态数据
   const [serverDb, setServerDb] = useState<BlessingData[]>([]);
-  
+
   const [nfcId, setNfcId] = useState<string | null>(null);
   const [hasBlessing, setHasBlessing] = useState(false);
   const [blessingText, setBlessingText] = useState("");
   const [isPasswordEnabled, setPasswordEnabled] = useState(false);
   const [password, setPassword] = useState<string | null>(null);
-
+  const [videoIndex, setVideoIndex] = useState<number>(0);
   // 1. 初始化时，先去 PHP 拿一次数据
   useEffect(() => {
     fetch('/api.php')
@@ -55,7 +58,7 @@ export const BlessingProvider = ({ children }: { children: ReactNode }) => {
   }, [serverDb]);
 
   // 3. 加载数据：优先用服务器的，没有再用本地初始的
-const loadDeviceData = useCallback(async (id: string) => {
+  const loadDeviceData = useCallback(async (id: string) => {
     setNfcId(id);
     try {
       const res = await fetch('/api.php');
@@ -71,6 +74,7 @@ const loadDeviceData = useCallback(async (id: string) => {
         setPasswordEnabled(device.is_password_enabled === true || String(device.is_password_enabled).toUpperCase() === "TRUE");
         setPassword(device.password);
         setHasBlessing(true);
+        setVideoIndex(Number(device.video_index) || 0);
       } else {
         setHasBlessing(false);
         resetState();
@@ -85,6 +89,7 @@ const loadDeviceData = useCallback(async (id: string) => {
     setPasswordEnabled(false);
     setPassword(null);
     setHasBlessing(false);
+    setVideoIndex(0);
   };
 
   // 4. 保存数据：推送到 PHP 接口
@@ -100,6 +105,7 @@ const loadDeviceData = useCallback(async (id: string) => {
       blessing_text: final_text,
       is_password_enabled: final_pwdEnabled,
       password: final_pwd,
+      video_index: videoIndex,
     };
 
     try {
@@ -115,12 +121,12 @@ const loadDeviceData = useCallback(async (id: string) => {
         const filtered = prev.filter(item => item.nfc_id !== nfcId);
         return [...filtered, newData];
       });
-      
+
       setHasBlessing(true);
       setBlessingText(final_text);
       setPasswordEnabled(final_pwdEnabled === true || String(final_pwdEnabled).toUpperCase() === "TRUE");
       setPassword(final_pwd);
-      
+
       console.log("多机同步保存成功");
     } catch (e) {
       console.error("同步到服务器失败", e);
@@ -130,9 +136,9 @@ const loadDeviceData = useCallback(async (id: string) => {
 
   return (
     <BlessingContext.Provider value={{
-      nfcId, hasBlessing, blessingText, isPasswordEnabled, password,
-      setNfcId, setHasBlessing, setBlessingText, setPasswordEnabled, setPassword,
-      resetState, saveToMockDB, loadDeviceData, checkIdExists
+      nfcId, hasBlessing, blessingText, isPasswordEnabled, password, videoIndex,
+      setNfcId, setHasBlessing, setBlessingText, setPasswordEnabled, setPassword, setVideoIndex,
+      resetState, saveToMockDB, loadDeviceData, checkIdExists,
     }}>
       {children}
     </BlessingContext.Provider>
