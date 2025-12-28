@@ -1,4 +1,4 @@
-# 瑶光阁 · Yaoguang Pavilion
+# 瑶光阁 · Yaoguang 
 
 > 传递心意，珍藏美好  
 > Convey emotion. Preserve meaning.
