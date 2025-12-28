@@ -18,7 +18,7 @@
 
 珠宝不再只是被佩戴的物件，而成为**情感的载体与记忆的入口**。
 
-本项目验证「珠宝 × NFC × 情感留存」这一完整体验闭环，为未来更丰富的数字化表达与仪式感设计奠定基础。
+本项目以轻量级 **MVP** 为目标，验证「珠宝 × NFC × 情感留存」这一完整体验闭环，为未来更丰富的数字化表达与仪式感设计奠定基础。
 
 ---
 
@@ -40,6 +40,33 @@ This project is developed as a **Minimum Viable Product (MVP)** to validate the 
 
 ---
 
+## 🧠 实现说明｜Implementation Notes (MVP)
+
+当前版本采用 **轻量级、无数据库依赖** 的实现方式，以降低部署成本并加快验证周期。
+
+- 后端通过 `api.php` 处理祝福内容的创建与更新逻辑  
+- 祝福文本与随机生成的查看密码由接口统一管理  
+- 所有数据以结构化 JSON 的形式，写入并持久化至本地文件 `remote_db.json`  
+- 每条记录均以唯一的 **NFC_ID** 作为索引，与对应珠宝一一绑定  
+
+该方式适用于早期验证 NFC 触发流程、情感交互体验以及整体用户路径设计。  
+在后续阶段，可无缝迁移至正式数据库系统（如 PostgreSQL / MySQL / Cloud DB）。
+
+---
+
+## 🧠 Implementation Notes (English)
+
+The current version intentionally avoids a traditional database in order to keep the MVP lightweight and easy to deploy.
+
+- A simple `api.php` endpoint handles the creation and update of blessing messages  
+- Viewing passwords are generated and managed by the API when enabled  
+- All data is persisted in a structured local JSON file: `remote_db.json`  
+- Each record is indexed by a unique **NFC_ID**, ensuring a one-to-one mapping between jewelry and its digital content  
+
+This approach is designed for early-stage validation of NFC-triggered flows and emotional interaction design, and can be smoothly migrated to a full database-backed architecture in future iterations.
+
+---
+
 ## ✨ 核心理念｜Core Concept
 
 - 每一件珠宝，都是独一无二的情感载体  
@@ -50,13 +77,14 @@ Technology stays invisible — emotion stays present.
 
 ---
 
-## 🧩 技术实现｜Tech Stack
+## 🧩 技术栈｜Tech Stack
 
 - **Vite** — 轻量、快速的前端构建工具  
 - **React** — 构建沉浸式交互体验  
 - **TypeScript** — 提供可靠的类型安全  
 - **Tailwind CSS** — 用于精细控制视觉与层次  
 - **shadcn/ui** — 简洁克制的 UI 组件体系  
+- **PHP** — 轻量级后端接口，用于数据写入与读取  
 
 ---
 
